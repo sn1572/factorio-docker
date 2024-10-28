@@ -83,6 +83,7 @@ def login():
         username = os.environ["DOCKER_USERNAME"]
         password = os.environ["DOCKER_PASSWORD"]
         subprocess.run(["docker", "login", ACR, "-u", username, "-p", password], check=True)
+        print(f"Login to {ACR} successful.")
     except KeyError:
         print("Username and password need to be given")
         exit(1)
