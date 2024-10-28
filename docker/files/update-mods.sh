@@ -4,7 +4,7 @@ set -eou pipefail
 FACTORIO_VERSION=$1
 MOD_DIR=$2
 USERNAME="DukeNewcombe"
-TOKEN=__API_TOKEN__
+TOKEN=$4
 
 MOD_BASE_URL="https://mods.factorio.com"
 
