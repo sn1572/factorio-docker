@@ -76,12 +76,16 @@ def login():
     try:
         username = os.environ["DOCKER_USERNAME"]
         password = os.environ["DOCKER_PASSWORD"]
-        subprocess.run(["docker", "login", "-u", username, "-p", password], check=True)
+        registry = "factoribro.azurecr.io"
+        subprocess.run(["docker", "login", registry, "-u", username, "-p", password], check=True)
     except KeyError:
         print("Username and password need to be given")
         exit(1)
-    except subprocess.CalledProcessError:
-        print("Docker login failed")
+    except subprocess.CalledProcessError as e:
+        print("Error:", e)
+        print("Return code:", e.returncode)
+        print("Standard output:", e.stdout)
+        print("Standard error:", e.stderr)
         exit(1)
 
 
