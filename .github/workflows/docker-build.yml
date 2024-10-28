@@ -25,6 +25,7 @@ jobs:
         env:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          TOKEN: ${{ secrets.TOKEN }}
         run: |
-          sed -i "s/__TOKEN__/${{ secrets.TOKEN }}/g" docker/files/update-mods.sh
+          sed -i "s/__TOKEN__/$TOKEN/g" docker/files/update-mods.sh
           ./build.py --push-tags
