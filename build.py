@@ -41,8 +41,7 @@ def build_and_push_multiarch(build_dir, build_args, push):
 
 
 def build_singlearch(build_dir, build_args):
-    print(f"build args: {build_args}")
-    build_command = ["docker", "build", "-t", f"{ACR}/factorio:{tag}"] + build_args
+    build_command = ["docker", "build"] + build_args
     try:
         subprocess.run(build_command, cwd=build_dir, check=True)
     except subprocess.CalledProcessError:
@@ -69,7 +68,7 @@ def build_and_push(sha256, version, tags, push, multiarch):
     shutil.copytree("docker", build_dir)
     build_args = ["--build-arg", f"VERSION={version}", "--build-arg", f"SHA256={sha256}", "."]
     for tag in tags:
-        build_args.extend(["-t", f"factoriotools/factorio:{tag}"])
+        build_args.extend(["-t", f"{ACR}/factorio:{tag}"])
     if multiarch:
         build_and_push_multiarch(build_dir, build_args, push)
     else:
