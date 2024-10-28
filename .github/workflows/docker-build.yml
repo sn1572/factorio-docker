@@ -27,4 +27,4 @@ jobs:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         run: |
           sed -i "s/__TOKEN__/${{ secrets.TOKEN }}/g" docker/files/update-mods.sh
-          ./build.py --push-tags --multiarch
+          ./build.py --push-tags
