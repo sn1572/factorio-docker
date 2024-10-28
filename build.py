@@ -12,6 +12,7 @@ PLATFORMS = [
     "linux/arm64",
     "linux/amd64",
 ]
+ACR = "factoribro.azurecr.io"
 
 
 def create_builder(build_dir, builder_name, platform):
@@ -49,12 +50,16 @@ def build_singlearch(build_dir, build_args):
 
 
 def push_singlearch(tags):
+    global ACR
     for tag in tags:
         try:
-            subprocess.run(["docker", "push", f"factoriotools/factorio:{tag}"],
+            subprocess.run(["docker", "push", f"{ACR}/factorio:{tag}"],
                             check=True)
-        except subprocess.CalledProcessError:
-            print("Docker push failed")
+        except subprocess.CalledProcessError as e:
+            print("Error:", e)
+            print("Return code:", e.returncode)
+            print("Standard output:", e.stdout)
+            print("Standard error:", e.stderr)
             exit(1)
 
 
@@ -73,11 +78,11 @@ def build_and_push(sha256, version, tags, push, multiarch):
 
 
 def login():
+    global ACR
     try:
         username = os.environ["DOCKER_USERNAME"]
         password = os.environ["DOCKER_PASSWORD"]
-        registry = "factoribro.azurecr.io"
-        subprocess.run(["docker", "login", registry, "-u", username, "-p", password], check=True)
+        subprocess.run(["docker", "login", ACR, "-u", username, "-p", password], check=True)
     except KeyError:
         print("Username and password need to be given")
         exit(1)
