@@ -41,7 +41,8 @@ def build_and_push_multiarch(build_dir, build_args, push):
 
 
 def build_singlearch(build_dir, build_args):
-    build_command = ["docker", "build"] + build_args
+    print(f"build args: {build_args}")
+    build_command = ["docker", "build", "-t", f"{ACR}/factorio:{tag}"] + build_args
     try:
         subprocess.run(build_command, cwd=build_dir, check=True)
     except subprocess.CalledProcessError:
