@@ -21,7 +21,7 @@ if [[ ! -f $CONFIG/rconpw ]]; then
   pwgen 15 1 >"$CONFIG/rconpw"
 fi
 
-# Copy default settings if server-settings.json doesn't exist
+# Copy server-settings.json
 cp /opt/factorio/data/server-settings.json "$CONFIG/server-settings.json"
 
 if [[ ! -f $CONFIG/map-gen-settings.json ]]; then
