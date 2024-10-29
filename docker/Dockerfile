@@ -46,7 +46,7 @@ RUN apt-get -q update \
     && rm -rf /var/lib/apt/lists/*
 
 # We want to mount SMB shares in Azure, and how am I supposed to live without vim?
-RUN apt-get -qy install samba vim
+RUN apt install samba vim
 
 RUN addgroup --system --gid "$PGID" "$GROUP" \
     && adduser --system --uid "$PUID" --gid "$PGID" --no-create-home --disabled-password --shell /bin/sh "$USER"
