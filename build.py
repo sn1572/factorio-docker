@@ -12,6 +12,7 @@ PLATFORMS = [
     "linux/arm64",
     "linux/amd64",
 ]
+ACR = "factoribro.azurecr.io"
 
 
 def create_builder(build_dir, builder_name, platform):
@@ -49,12 +50,16 @@ def build_singlearch(build_dir, build_args):
 
 
 def push_singlearch(tags):
+    global ACR
     for tag in tags:
         try:
-            subprocess.run(["docker", "push", f"factoriotools/factorio:{tag}"],
+            subprocess.run(["docker", "push", f"{ACR}/factorio:{tag}"],
                             check=True)
-        except subprocess.CalledProcessError:
-            print("Docker push failed")
+        except subprocess.CalledProcessError as e:
+            print("Error:", e)
+            print("Return code:", e.returncode)
+            print("Standard output:", e.stdout)
+            print("Standard error:", e.stderr)
             exit(1)
 
 
@@ -63,7 +68,7 @@ def build_and_push(sha256, version, tags, push, multiarch):
     shutil.copytree("docker", build_dir)
     build_args = ["--build-arg", f"VERSION={version}", "--build-arg", f"SHA256={sha256}", "."]
     for tag in tags:
-        build_args.extend(["-t", f"factoriotools/factorio:{tag}"])
+        build_args.extend(["-t", f"{ACR}/factorio:{tag}"])
     if multiarch:
         build_and_push_multiarch(build_dir, build_args, push)
     else:
@@ -73,15 +78,20 @@ def build_and_push(sha256, version, tags, push, multiarch):
 
 
 def login():
+    global ACR
     try:
         username = os.environ["DOCKER_USERNAME"]
         password = os.environ["DOCKER_PASSWORD"]
-        subprocess.run(["docker", "login", "-u", username, "-p", password], check=True)
+        subprocess.run(["docker", "login", ACR, "-u", username, "-p", password], check=True)
+        print(f"Login to {ACR} successful.")
     except KeyError:
         print("Username and password need to be given")
         exit(1)
-    except subprocess.CalledProcessError:
-        print("Docker login failed")
+    except subprocess.CalledProcessError as e:
+        print("Error:", e)
+        print("Return code:", e.returncode)
+        print("Standard output:", e.stdout)
+        print("Standard error:", e.stderr)
         exit(1)
 
 
