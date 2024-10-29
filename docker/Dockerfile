@@ -33,8 +33,9 @@ ENV PORT=34197 \
 
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
+# We want to mount SMB shares in Azure, and how am I supposed to live without vim?
 RUN apt-get -q update \
-    && DEBIAN_FRONTEND=noninteractive apt-get -qy install ca-certificates curl jq pwgen xz-utils procps gettext-base --no-install-recommends \
+    && DEBIAN_FRONTEND=noninteractive apt-get -qy install ca-certificates curl jq pwgen xz-utils procps gettext-base samba vim --no-install-recommends \
     && if [[ "$(uname -m)" == "aarch64" ]]; then \
         echo "installing ARM compatability layer" \
         && DEBIAN_FRONTEND=noninteractive apt-get -qy install unzip --no-install-recommends \ 
@@ -44,9 +45,6 @@ RUN apt-get -q update \
         && chmod +x /bin/box64; \
     fi \
     && rm -rf /var/lib/apt/lists/*
-
-# We want to mount SMB shares in Azure, and how am I supposed to live without vim?
-RUN apt install samba vim
 
 RUN addgroup --system --gid "$PGID" "$GROUP" \
     && adduser --system --uid "$PUID" --gid "$PGID" --no-create-home --disabled-password --shell /bin/sh "$USER"
