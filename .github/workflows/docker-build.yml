@@ -29,9 +29,9 @@ jobs:
           USERNAME: ${{ secrets.USERNAME }}
           GAME_PASSWORD: ${{ secrets.GAME_PASSWORD }}
         run: |
-          sed -i "s/__USERNAME__/\"${{ secrets.USERNAME }}\"/g" docker/files/update-mods.sh
-          sed -i "s/__USERNAME__/\"${{ secrets.USERNAME }}/\"g" docker/files/server-settings.json
-          sed -i "s/__TOKEN__/\"${{ secrets.TOKEN }}\"/g" docker/files/update-mods.sh
-          sed -i "s/__TOKEN__/\"${{ secrets.TOKEN }}\"/g" docker/files/server-settings.json
-          sed -i "s/__GAME_PASSWORD__/\"${{ secrets.GAME_PASSWORD }}\"/g" docker/files/server-settings.json"
+          sed -i "s/__USERNAME__/${{ secrets.USERNAME }}/g" docker/files/update-mods.sh
+          sed -i "s/__USERNAME__/${{ secrets.USERNAME }}/g" docker/files/server-settings.json
+          sed -i "s/__TOKEN__/${{ secrets.TOKEN }}/g" docker/files/update-mods.sh
+          sed -i "s/__TOKEN__/${{ secrets.TOKEN }}/g" docker/files/server-settings.json
+          sed -i "s/__GAME_PASSWORD__/${{ secrets.GAME_PASSWORD }}/g" docker/files/server-settings.json"
           ./build.py --push-tags
