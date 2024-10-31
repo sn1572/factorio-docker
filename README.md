@@ -8,7 +8,7 @@ Mark's Azure configuration.
 [中文](./README_zh_CN.md)
 
 <!-- start autogeneration tags -->
-* `2`, `2.0`, `2.0.12`, `latest`, `stable`, `stable-2.0.12`
+* `2`, `2.0`, `2.0.13`, `latest`, `stable`, `stable-2.0.13`
 * `1`, `1.1`, `1.1.110`, `stable-1.1.110`
 * `1.0`, `1.0.0`
 * `0.17`, `0.17.79`
