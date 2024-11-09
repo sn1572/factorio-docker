@@ -1,11 +1,6 @@
 name: Version update and Docker build
 
 on:
-  push:
-    branches:
-      - master
-    paths:
-      - buildinfo.json
   # workaround for #526
   workflow_dispatch:
 
