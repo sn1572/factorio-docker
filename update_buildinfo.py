@@ -49,7 +49,7 @@ def write_template(latest):
     print(f"Found latest version: {major}.{minor}.{rev}")
     ver_str = f"{major}.{minor}.{rev}"
     data = {"sha256": latest[1]['sha256'],
-            "tags": ["stable"]}
+            "tags": ["stable", ver_str]}
     template = {ver_str: data}
     with open(build_file, 'w') as f:
         f.write(json.dumps(template))
