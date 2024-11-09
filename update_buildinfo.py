@@ -46,6 +46,7 @@ def write_template(latest):
     this_dir = os.path.dirname(__file__)
     build_file = os.path.join(this_dir, "buildinfo.json")
     major, minor, rev = latest[0]
+    print(f"Found latest version: {major}.{minor}.{rev}")
     ver_str = f"{major}.{minor}.{rev}"
     data = {"sha256": latest[1]['sha256'],
             "tags": ["stable"]}
