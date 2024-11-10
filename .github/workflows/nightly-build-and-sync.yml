@@ -1,0 +1,35 @@
+name: Nightly build
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: 0 3 * * *
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Sync
+        uses: dabreadman/sync-upstream-repo@v1.0.0.b
+        with:
+          upstream_repo: "https://github.com/factoriotools/factorio-docker.git"
+          upstream_branch: master
+          downstream_branch: master
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: build and push
+        if: ${{ env.DOCKER_USERNAME != '' && env.DOCKER_PASSWORD != '' }}
+        env:
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          TOKEN: ${{ secrets.TOKEN }}
+          USERNAME: ${{ secrets.USERNAME }}
+          GAME_PASSWORD: ${{ secrets.GAME_PASSWORD }}
+        run: |
+          sed -i "s|__TOKEN__|${{ secrets.TOKEN }}|g" docker/files/server-settings.json
+          sed -i "7 s|__TOKEN__|${{ secrets.TOKEN }}|g" docker/files/update-mods.sh
+          sed -i "s|__USERNAME__|${{ secrets.USERNAME }}|g" docker/files/server-settings.json
+          sed -i "6 s|__USERNAME__|${{ secrets.USERNAME }}|g" docker/files/update-mods.sh
+          sed -i "s|__GAME_PASSWORD__|${{ secrets.GAME_PASSWORD }}|g" docker/files/server-settings.json
+          ./custom-build.py
