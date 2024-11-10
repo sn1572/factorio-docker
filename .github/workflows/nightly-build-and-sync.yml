@@ -18,7 +18,10 @@ jobs:
           downstream_branch: master
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: build and push
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build and push
         if: ${{ env.DOCKER_USERNAME != '' && env.DOCKER_PASSWORD != '' }}
         env:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
