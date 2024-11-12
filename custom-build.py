@@ -18,7 +18,6 @@ def main(push_tags=True, multiarch=False):
         tags = buildinfo["tags"]
         if ('latest' in tags) or ('stable' in tags):
             build_and_push(sha256, version, tags, push_tags, multiarch)
-            break
 
 
 if __name__ == '__main__':
