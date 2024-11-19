@@ -8,9 +8,12 @@ Mark's Azure configuration.
 [中文](./README_zh_CN.md)
 
 <!-- start autogeneration tags -->
-* `2.0.17`, `latest`
+* `2`, `2.0`, `2.0.20`, `latest`, `stable`, `stable-2.0.20`
+* `2.0.19`
+* `2.0.18`
+* `2.0.17`
 * `2.0.16`
-* `2`, `2.0`, `2.0.15`, `stable`, `stable-2.0.15`
+* `2.0`, `2.0.15`, `stable-2.0.15`
 * `2.0`, `2.0.14`, `stable-2.0.14`
 * `2.0`, `2.0.13`, `stable-2.0.13`
 * `1`, `1.1`, `1.1.110`, `stable-1.1.110`
@@ -25,7 +28,7 @@ Mark's Azure configuration.
 ## Tag descriptions
 
 * `latest` - most up-to-date version (may be experimental).
-* `stable` - version declared stable on [factorio.com](https://www.factorio.com).
+* `stable` - version declared stable on [factorio.com](https://www.factorio.com) ([FFF-435 Since 2.0 versions gets released as experimental first, once stable it will be marked as stable](https://factorio.com/blog/post/fff-435)).
 * `0.x`    - latest version in a branch.
 * `0.x.y` - a specific version.
 * `0.x-z` - incremental fix for that version.
@@ -97,6 +100,15 @@ docker run -d -it  \
       --name factorio \
       factoriotools/factorio
 docker attach factorio
+```
+
+### RCON (2.0.18+)
+
+Alternativly (e.g. for scripting) the RCON connection can be used to send commands to the running factorio server.
+This does not require the RCON connection to be exposed.
+
+```shell
+docker exec factorio rcon /h
 ```
 
 ### Upgrading
