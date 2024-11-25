@@ -17,6 +17,7 @@ def main(push_tags=True, multiarch=False):
         sha256 = buildinfo["sha256"]
         tags = buildinfo["tags"]
         if ('latest' in tags) or ('stable' in tags):
+            print(f"Building {tags}, {sha256}")
             build_and_push(sha256, version, tags, push_tags, multiarch)
 
 
