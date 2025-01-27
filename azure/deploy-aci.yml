@@ -1,0 +1,52 @@
+# STORAGE_KEY=$(az storage account keys list --resource-group factorio-server --account-name factoribrosa --query "[0].value" --output tsv)
+# echo $STORAGE_KEY
+# Once done, deploy the yaml using:
+# az container create --resource-group factorio-server --file deploy-aci.yaml
+
+name: server-container
+location: eastus
+properties:
+  containers:
+  - name: factorio-server
+    properties:
+      environmentVariables: []
+      image: factoribro.azurecr.io/factorio:stable
+      ports:
+      - port: 34197
+        protocol: UDP
+      resources:
+        requests:
+          cpu: 4.0
+          memoryInGB: 8.0
+      volumeMounts:
+      - mountPath: /factorio/saves
+        name: saveshare
+        readOnly: false
+      - mountPath: /factorio/mods
+        name: modshare
+        readOnly: false
+  imageRegistryCredentials:
+    - server: factoribro.azurecr.io
+      username: factoribro
+      password: __ACR_CREDENTIALS__
+  osType: Linux
+  restartPolicy: OnFailure
+  ipAddress:
+    type: Public
+    ports:
+      - port: 34197
+        protocol: UDP
+    dnsNameLabel: house-of-pancakes
+  volumes:
+  - name: saveshare
+    azureFile:
+      sharename: smb-share
+      storageAccountName: factoribrosa
+      storageAccountKey: __SA_CREDENTIALS__
+  - name: modshare
+    azureFile:
+      sharename: mods
+      storageAccountName: factoribrosa
+      storageAccountKey: __SA_CREDENTIALS__
+tags: {}
+type: Microsoft.ContainerInstance/containerGroups
