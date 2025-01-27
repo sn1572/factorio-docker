@@ -38,7 +38,8 @@ ENV PORT=34197 \
     SCRIPTOUTPUT=/factorio/script-output \
     PUID="$PUID" \
     PGID="$PGID" \
-    DLC_SPACE_AGE="true"
+    DLC_SPACE_AGE="true" \
+    UPDATE_MODS_ON_START="false"
 
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
