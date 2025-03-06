@@ -8,7 +8,8 @@ Mark's Azure configuration.
 [中文](./README_zh_CN.md)
 
 <!-- start autogeneration tags -->
-* `2.0.38`, `latest`
+* `2.0.39`, `latest`
+* `2.0.38`
 * `2.0.37`
 * `2.0.36`
 * `2.0.35`
