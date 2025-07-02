@@ -40,7 +40,7 @@ properties:
   volumes:
   - name: saveshare
     azureFile:
-      sharename: smb-share
+      sharename: saves
       storageAccountName: factoribrosa
       storageAccountKey: __SA_CREDENTIALS__
   - name: modshare
