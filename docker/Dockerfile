@@ -38,7 +38,9 @@ ENV PORT=34197 \
     SCRIPTOUTPUT=/factorio/script-output \
     PUID="$PUID" \
     PGID="$PGID" \
-    DLC_SPACE_AGE="true"
+    DLC_SPACE_AGE="true" \
+    UPDATE_MODS_ON_START="false" \
+    CONSOLE_LOG_LOCATION="/factorio/mods/factorio-current.log"
 
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
