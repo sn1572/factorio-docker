@@ -6,8 +6,8 @@ services:
       args:
         # Check buildinfo.json for supported versions and SHAs
         # https://github.com/factoriotools/factorio-docker/blob/master/buildinfo.json
-        - VERSION=2.0.42
-        - SHA256=b5b8b8bdc915e67dbc1710cd3d6aa6802d397b7c0f47db07da8acf39d5bd6376
+        - VERSION=2.0.76
+        - SHA256=ef3663f66146d76342f7c09a3f743792636f8cd95c39ea26cfca5bd2e0e92430
     ports:
       - "34197:34197/udp"
       - "27015:27015/tcp"
@@ -17,6 +17,7 @@ services:
       #      - PUID=1000
       #      - PGID=1000
       #      - UPDATE_MODS_ON_START=true
+      #      - UPDATE_IGNORE=mod1,mod2,mod3
       #      - USERNAME=FactorioUsername
       #      - TOKEN=FactorioToken
       #      - PORT=34198

@@ -12,9 +12,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.REPO_TOKEN }}
+        uses: actions/checkout@v6
 
       - name: Run update script
         run: ./update.sh

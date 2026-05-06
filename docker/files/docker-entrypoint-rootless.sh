@@ -9,6 +9,8 @@ SAVE_NAME="${SAVE_NAME:-""}"
 BIND="${BIND:-""}"
 CONSOLE_LOG_LOCATION="${CONSOLE_LOG_LOCATION:-""}"
 
+# Create directories if they don't exist
+# In rootless mode, these should be writable by the container user
 mkdir -p "$FACTORIO_VOL"
 mkdir -p "$SAVES"
 mkdir -p "$CONFIG"
@@ -16,13 +18,15 @@ mkdir -p "$MODS"
 mkdir -p "$SCENARIOS"
 mkdir -p "$SCRIPTOUTPUT"
 
+# Generate RCON password if needed
 if [[ ! -f $CONFIG/rconpw ]]; then
-  # Generate a new RCON password if none exists
   pwgen 15 1 >"$CONFIG/rconpw"
 fi
 
-# Copy server-settings.json
-cp /opt/factorio/data/server-settings.json "$CONFIG/server-settings.json"
+# Copy default configs if they don't exist
+if [[ ! -f $CONFIG/server-settings.json ]]; then
+  cp /opt/factorio/data/server-settings.example.json "$CONFIG/server-settings.json"
+fi
 
 if [[ ! -f $CONFIG/map-gen-settings.json ]]; then
   cp /opt/factorio/data/map-gen-settings.example.json "$CONFIG/map-gen-settings.json"
@@ -32,35 +36,31 @@ if [[ ! -f $CONFIG/map-settings.json ]]; then
   cp /opt/factorio/data/map-settings.example.json "$CONFIG/map-settings.json"
 fi
 
+# Clean up incomplete saves
 NRTMPSAVES=$( find -L "$SAVES" -iname \*.tmp.zip -mindepth 1 | wc -l )
 if [[ $NRTMPSAVES -gt 0 ]]; then
-  # Delete incomplete saves (such as after a forced exit)
   rm -f "$SAVES"/*.tmp.zip
 fi
 
+# Update mods if requested
 if [[ ${UPDATE_MODS_ON_START:-} == "true" ]]; then
   "${INSTALLED_DIRECTORY}"/docker-update-mods.sh
 fi
 
+# Handle DLC
 "${INSTALLED_DIRECTORY}"/docker-dlc.sh
 
+# In rootless mode, we don't need to handle user switching or chown
+# The container runs as the specified user from the start
 EXEC=""
-if [[ $(id -u) == 0 ]]; then
-  # Update the User and Group ID based on the PUID/PGID variables
-  usermod -o -u "$PUID" factorio
-  groupmod -o -g "$PGID" factorio
-  # Take ownership of factorio data if running as root
-  chown -R factorio:factorio "$FACTORIO_VOL"
-  # Drop to the factorio user
-  EXEC="runuser -u factorio -g factorio --"
-fi
-
 # Setup ARM64 emulation support
 # shellcheck disable=SC1091
 source "${INSTALLED_DIRECTORY}/setup-exec.sh"
 
+# Update config path
 sed -i '/write-data=/c\write-data=\/factorio/' /opt/factorio/config/config.ini
 
+# Generate new save if needed
 NRSAVES=$(find -L "$SAVES" -iname \*.zip -mindepth 1 | wc -l)
 if [[ $GENERATE_NEW_SAVE != true && $NRSAVES ==  0 ]]; then
     GENERATE_NEW_SAVE=true
@@ -75,7 +75,7 @@ if [[ $GENERATE_NEW_SAVE == true ]]; then
     if [[ -f "$SAVES/$SAVE_NAME.zip" ]]; then
         echo "Map $SAVES/$SAVE_NAME.zip already exists, skipping map generation"
     else
-        if [[ ! -z "$PRESET" ]]; then
+        if [[ -n "$PRESET" ]]; then
             $EXEC /opt/factorio/bin/x64/factorio \
                 --create "$SAVES/$SAVE_NAME.zip" \
                 --preset "$PRESET" \
@@ -90,6 +90,7 @@ if [[ $GENERATE_NEW_SAVE == true ]]; then
     fi
 fi
 
+# Build command flags
 FLAGS=(\
   --port "$PORT" \
   --server-settings "$CONFIG/server-settings.json" \
@@ -117,5 +118,6 @@ else
     FLAGS+=( --start-server "$SAVE_NAME" )
 fi
 
-# shellcheck disable=SC2086
+# Execute factorio
+# In rootless mode, we run directly without user switching
 exec $EXEC /opt/factorio/bin/x64/factorio "${FLAGS[@]}" "$@"

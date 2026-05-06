@@ -59,42 +59,95 @@ latestCurrentVersionShort=$latestCurrentVersionMajor.$latestCurrentVersionMinor
 echo "stableOnlineVersionShort=${stableOnlineVersionShort} experimentalOnlineVersionShort=${experimentalOnlineVersionShort}"
 echo "stableCurrentVersionShort=${stableCurrentVersionShort} latestCurrentVersionShort=${latestCurrentVersionShort}"
 
+# Create new buildinfo.json with only current versions
 tmpfile=$(mktemp)
 
-# Remove stable tag
-cp buildinfo.json "$tmpfile"
-jq --arg stable_current_version "$stable_current_version" 'with_entries(if .key == $stable_current_version then .value.tags |= . - ["stable"] else . end)' "$tmpfile" > buildinfo.json
-rm -f -- "$tmpfile"
+# Start with empty JSON object
+echo '{}' > "$tmpfile"
 
-# Remove latest tag
-cp buildinfo.json "$tmpfile"
-jq --arg latest_current_version "$latest_current_version" 'with_entries(if .key == $latest_current_version then .value.tags |= . - ["latest"] else . end)' "$tmpfile" > buildinfo.json
-rm -f -- "$tmpfile"
-
-# Update tag by stable
-cp buildinfo.json "$tmpfile"
-if [[ "$stable_online_version" == "$stable_current_version" ]]; then
-    jq --arg stable_current_version "$stable_current_version" --arg stable_online_version "$stable_online_version" --arg sha256 "$stable_sha256" 'with_entries(if .key == $stable_current_version then .key |= $stable_online_version | .value.sha256 |= $sha256 | .value.tags |= . - [$stable_current_version] + [$stable_online_version, "stable"] else . end)' "$tmpfile" > buildinfo.json
+# Add stable version
+if [[ "$stable_online_version" == "$experimental_online_version" ]]; then
+    # Stable and experimental are the same version
+    jq --arg stable_online_version "$stable_online_version" --arg sha256 "$stable_sha256" --arg stableOnlineVersionShort "$stableOnlineVersionShort" --arg stableOnlineVersionMajor "$stableOnlineVersionMajor" \
+        '. + {($stable_online_version): {sha256: $sha256, tags: ["latest", "stable", ("stable-" + $stable_online_version), $stableOnlineVersionMajor, $stableOnlineVersionShort, $stable_online_version]}}' "$tmpfile" > buildinfo.json
 else
-    jq --arg stable_current_version "$stable_current_version" --arg stable_online_version "$stable_online_version" --arg sha256 "$stable_sha256" --arg stableOnlineVersionShort "$stableOnlineVersionShort" --arg stableOnlineVersionMajor "$stableOnlineVersionMajor" 'with_entries(if .key == $stable_current_version then .value.tags |= . - ["latest","stable",$stableOnlineVersionMajor] else . end) | to_entries | . + [{ key: $stable_online_version, value: { sha256: $sha256, tags: ["latest","stable",("stable-" + $stable_online_version),$stableOnlineVersionMajor,$stableOnlineVersionShort,$stable_online_version]}}] | from_entries' "$tmpfile" > buildinfo.json
-fi
-rm -f -- "$tmpfile"
-
-# Update tag by latest
-cp buildinfo.json "$tmpfile"
-if [[ $experimental_online_version != "$stable_online_version" ]]; then
+    # Different stable and experimental versions
+    # First add stable
+    jq --arg stable_online_version "$stable_online_version" --arg sha256 "$stable_sha256" --arg stableOnlineVersionShort "$stableOnlineVersionShort" --arg stableOnlineVersionMajor "$stableOnlineVersionMajor" \
+        '. + {($stable_online_version): {sha256: $sha256, tags: ["stable", ("stable-" + $stable_online_version), $stableOnlineVersionMajor, $stableOnlineVersionShort, $stable_online_version]}}' "$tmpfile" > buildinfo.json.tmp
+    mv buildinfo.json.tmp "$tmpfile"
+    
+    # Then add experimental
     if [[ $stableOnlineVersionShort == "$experimentalOnlineVersionShort" ]]; then
-        jq --arg experimental_online_version "$experimental_online_version" --arg stable_online_version "$stable_online_version" --arg sha256 "$experimental_sha256" 'with_entries(if .key == $stable_online_version then .value.tags |= . - ["latest"] else . end) | to_entries | . + [{ key: $experimental_online_version, value: { sha256: $sha256, tags: ["latest", $experimental_online_version]}}] | from_entries' "$tmpfile" > buildinfo.json
+        jq --arg experimental_online_version "$experimental_online_version" --arg sha256 "$experimental_sha256" \
+            '. + {($experimental_online_version): {sha256: $sha256, tags: ["latest", $experimental_online_version]}}' "$tmpfile" > buildinfo.json
     else
-        jq --arg experimental_online_version "$experimental_online_version" --arg stable_online_version "$stable_online_version" --arg sha256 "$experimental_sha256" --arg experimentalOnlineVersionShort   "$experimentalOnlineVersionShort" --arg experimentalOnlineVersionMajor "$experimentalOnlineVersionMajor" 'with_entries(if .key == $stable_online_version then .value.tags |= . - ["latest"] else . end) | to_entries | . + [{ key: $experimental_online_version, value: { sha256: $sha256, tags: ["latest",$experimentalOnlineVersionMajor,$experimentalOnlineVersionShort,$experimental_online_version]}}] | from_entries' "$tmpfile" > buildinfo.json
+        jq --arg experimental_online_version "$experimental_online_version" --arg sha256 "$experimental_sha256" --arg experimentalOnlineVersionShort "$experimentalOnlineVersionShort" --arg experimentalOnlineVersionMajor "$experimentalOnlineVersionMajor" \
+            '. + {($experimental_online_version): {sha256: $sha256, tags: ["latest", $experimentalOnlineVersionMajor, $experimentalOnlineVersionShort, $experimental_online_version]}}' "$tmpfile" > buildinfo.json
     fi
 fi
+
 rm -f -- "$tmpfile"
 
-readme_tags=$(jq --sort-keys 'keys[]' buildinfo.json | tac | (while read -r line
-do
-  tags="$tags\n* "$(jq --sort-keys ".$line.tags | sort | .[]" buildinfo.json | sed 's/"/`/g' | sed ':a; /$/N; s/\n/, /; ta')
-done && printf "%s\n\n" "$tags"))
+# Generate README tags with logical sorting and de-duplication
+# First, collect all unique tags with their versions
+# Use regular arrays for bash compatibility
+declare tag_versions
+while IFS= read -r version; do
+  while IFS= read -r tag; do
+    # If this tag is already seen, compare versions to keep the latest
+    if [[ -n "${tag_versions[$tag]}" ]]; then
+      # Compare version strings - keep the higher one
+      if [[ "$version" > "${tag_versions[$tag]}" ]]; then
+        tag_versions[$tag]="$version"
+      fi
+    else
+      tag_versions[$tag]="$version"
+    fi
+  done < <(jq -r ".\"$version\".tags[]" buildinfo.json)
+done < <(jq -r 'keys[]' buildinfo.json | sort -V -r)
+
+# Build the tags list for README
+readme_tags=""
+# First add the current latest and stable tags
+latest_version=$(jq -r 'to_entries | map(select(.value.tags | contains(["latest"]))) | .[0].key' buildinfo.json)
+stable_version=$(jq -r 'to_entries | map(select(.value.tags | index("stable"))) | .[0].key' buildinfo.json)
+
+if [[ -n "$latest_version" ]]; then
+  latest_tags=$(jq -r ".\"$latest_version\".tags | map(select(. == \"latest\" or . == \"$latest_version\")) | join(\", \")" buildinfo.json | sed 's/"/`/g')
+  readme_tags="${readme_tags}\n* \`${latest_tags}\`"
+fi
+
+if [[ -n "$stable_version" ]] && [[ "$stable_version" != "$latest_version" ]]; then
+  stable_tags=$(jq -r ".\"$stable_version\".tags | sort | join(\", \")" buildinfo.json | sed 's/"/`/g')
+  readme_tags="${readme_tags}\n* \`${stable_tags}\`"
+fi
+
+# Add major.minor tags (e.g., 2.0, 1.1) - only the latest version for each
+declare -A major_minor_seen
+while IFS= read -r version; do
+  if [[ "$version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+    major="${BASH_REMATCH[1]}"
+    minor="${BASH_REMATCH[2]}"
+    major_minor="$major.$minor"
+    
+    # Skip if this is the latest or stable version (already added above)
+    if [[ "$version" == "$latest_version" ]] || [[ "$version" == "$stable_version" ]]; then
+      continue
+    fi
+    
+    # Only add if we haven't seen this major.minor yet
+    if [[ -z "${major_minor_seen[$major_minor]}" ]]; then
+      major_minor_seen[$major_minor]=1
+      tags=$(jq -r ".\"$version\".tags | join(\", \")" buildinfo.json | sed 's/"/`/g')
+      if [[ -n "$tags" ]]; then
+        readme_tags="${readme_tags}\n* \`${tags}\`"
+      fi
+    fi
+  fi
+done < <(jq -r 'keys[]' buildinfo.json | sort -V -r)
+
+readme_tags="${readme_tags}\n"
 
 perl -i -0777 -pe "s/<!-- start autogeneration tags -->.+<!-- end autogeneration tags -->/<!-- start autogeneration tags -->$readme_tags<!-- end autogeneration tags -->/s" README.md
 

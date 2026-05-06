@@ -8,45 +8,8 @@ Mark's Azure configuration.
 [中文](./README_zh_CN.md)
 
 <!-- start autogeneration tags -->
-* `2.0.43`, `latest`
-* `2`, `2.0`, `2.0.42`, `stable`, `stable-2.0.42`
-* `2.0`, `2.0.41`, `stable-2.0.41`
-* `2.0.40`
-* `2.0`, `2.0.39`, `stable-2.0.39`
-* `2.0.38`
-* `2.0.37`
-* `2.0.36`
-* `2.0.35`
-* `2.0.34`
-* `2.0.33`
-* `2.0`, `2.0.32`, `stable-2.0.32`
-* `2.0.31`
-* `2.0`, `2.0.30`, `stable-2.0.30`
-* `2.0.29`
-* `2.0`, `2.0.28`, `stable-2.0.28`
-* `2.0.27`
-* `2.0.26`
-* `2.0.25`
-* `2.0.24`
-* `2.0`, `2.0.23`, `stable-2.0.23`
-* `2.0.22`
-* `2.0`, `2.0.21`, `stable-2.0.21`
-* `2.0`, `2.0.20`, `stable-2.0.20`
-* `2.0.19`
-* `2.0.18`
-* `2.0.17`
-* `2.0.16`
-* `2.0`, `2.0.15`, `stable-2.0.15`
-* `2.0`, `2.0.14`, `stable-2.0.14`
-* `2.0`, `2.0.13`, `stable-2.0.13`
-* `1`, `1.1`, `1.1.110`, `stable-1.1.110`
-* `1.0`, `1.0.0`
-* `0.17`, `0.17.79`
-* `0.16`, `0.16.51`
-* `0.15`, `0.15.40`
-* `0.14`, `0.14.23`
-* `0.13`, `0.13.20`
-* `0.12`, `0.12.35`<!-- end autogeneration tags -->
+* `latest, 2.0.76`
+<!-- end autogeneration tags -->
 
 ## Tag descriptions
 
@@ -191,11 +154,31 @@ sudo docker run -d \
   factoriotools/factorio
 ```
 
+To generate a new map with a specific preset (e.g., death-world):
+
+```shell
+sudo docker run -d \
+  -p 34197:34197/udp \
+  -p 27015:27015/tcp \
+  -v /opt/factorio:/factorio \
+  -e LOAD_LATEST_SAVE=false \
+  -e GENERATE_NEW_SAVE=true \
+  -e SAVE_NAME=replaceme \
+  -e PRESET=death-world \
+  --name factorio \
+  --restart=unless-stopped \
+  factoriotools/factorio
+```
+
 ### Mods
 
 Copy mods into the mods folder and restart the server.
 
 As of 0.17 a new environment variable was added ``UPDATE_MODS_ON_START`` which if set to ``true`` will cause the mods get to updated on server start. If set a valid [Factorio Username and Token](https://www.factorio.com/profile) must be supplied or else the server will not start. They can either be set as docker secrets, environment variables, or pulled from the server-settings.json file.
+
+To prevent specific mods from being automatically updated, you can use the ``UPDATE_IGNORE`` environment variable with a comma-separated list of mod names. For example: ``UPDATE_IGNORE=mod1,mod2,mod3`` will skip updates for those three mods. This can be useful to prevent compatibility issues when certain mods should remain at specific versions. Be warned that it can also create compatibility issues.
+
+**Note:** When using the Space Age DLC, the built-in mods (`elevated-rails`, `quality`, and `space-age`) are automatically skipped during mod updates to prevent conflicts. These mods are included with the DLC and should not be downloaded separately.
 
 ### Scenarios
 
@@ -309,14 +292,30 @@ These are the environment variables which can be specified at container run time
 | BIND                 | IP address (v4 or v6) the server listens on (IP\[:PORT])             |                | 0.15+        |
 | RCON_PORT            | TCP port the rcon server listens on                                  | 27015          | 0.15+        |
 | SAVE_NAME            | Name to use for the save file                                        | _autosave1     | 0.17+        |
+| PRESET               | Map generation preset when GENERATE_NEW_SAVE is true                 |                | 0.17+        |
 | TOKEN                | factorio.com token                                                   |                | 0.17+        |
 | UPDATE_MODS_ON_START | If mods should be updated before starting the server                 |                | 0.17+        |
+| UPDATE_IGNORE        | Comma-separated list of mod names to skip during automatic updates   |                | 0.17+        |
 | USERNAME             | factorio.com username                                                |                | 0.17+        |
 | CONSOLE_LOG_LOCATION | Saves the console log to the specifies location                      |                |              |
 | DLC_SPACE_AGE        | Enables or disables the mods for DLC Space Age in mod-list.json[^1]  | true           | 2.0.8+       |
 | MODS                 | Mod directory to use                                                 | /factorio/mods | 2.0.8+       |
 
 **Note:** All environment variables are compared as strings
+
+#### PRESET Values
+
+The `PRESET` environment variable is used when generating a new map (when `GENERATE_NEW_SAVE=true`). It corresponds to Factorio's built-in map generation presets. Common values include:
+
+- `default` - Normal settings
+- `rich-resources` - Resources are more abundant
+- `marathon` - Recipes and technologies are more expensive
+- `death-world` - Biters are more aggressive and numerous
+- `death-world-marathon` - Combines death-world and marathon settings
+- `rail-world` - Resources are further apart, encouraging train usage
+- `ribbon-world` - Map height is limited for a unique challenge
+
+If PRESET is not specified or left empty, the map will be generated using the settings from `map-gen-settings.json` and `map-settings.json` without a preset.
 
 ## Container Details
 
@@ -446,7 +445,73 @@ stream {
 
 If your factorio host uses multiple IP addresses (very common with IPv6), you might additionally need to bind Factorio to a single IP (otherwise the UDP proxy might get confused with IP mismatches). To do that pass the `BIND` envvar to the container: `docker run --network=host -e BIND=2a02:1234::5678 ...`
 
+## Rootless Docker Support (Experimental)
+
+> **Note**: Rootless support is currently experimental. Please report any issues you encounter.
+
+If you're experiencing permission issues or want better security, consider using the rootless images. These images are designed to work seamlessly with rootless Docker installations and avoid common permission problems.
+
+### What are Rootless Images?
+
+The rootless images differ from regular images in several ways:
+- Run as UID 1000 (non-root) by default
+- No dynamic UID/GID mapping (PUID/PGID not supported)
+- No runtime chown operations
+- All directories created with open permissions during build
+
+### Rootless Image Tags
+
+Each regular tag has a corresponding rootless version with the `-rootless` suffix:
+- `latest-rootless` (experimental)
+- `stable-rootless` (experimental)
+- `2.0.55-rootless` (experimental)
+
+### Quick Start with Rootless
+
+```shell
+docker run -d \
+  -p 34197:34197/udp \
+  -p 27015:27015/tcp \
+  -v ~/factorio:/factorio \
+  --name factorio \
+  --restart=unless-stopped \
+  factoriotools/factorio:stable-rootless
+```
+
+Key differences:
+- No `chown` command needed
+- No PUID/PGID environment variables
+- Runs as UID 1000 by default
+- No permission issues with volumes
+
+### When to Use Rootless Images
+
+Consider using rootless images if you:
+- Are running Docker in rootless mode
+- Experience permission issues with volume mounts
+- Want to avoid containers running as root
+- Don't need dynamic UID/GID mapping via PUID/PGID
+
+### Limitations
+
+- PUID/PGID environment variables are not supported
+- Fixed to UID 1000 (may not match your host user)
+- Experimental feature - may have undiscovered issues
+
 ## Troubleshooting
+
+### Permission Issues
+
+If you're experiencing permission errors such as:
+- `chown: Operation not permitted`
+- `Permission denied [/factorio/saves]`
+- `Util.cpp:81: Operation not permitted`
+- Files owned by unexpected UIDs (like 100844 instead of 845)
+
+Please refer to our comprehensive [Permission Issues Guide](./PERMISSION_ISSUES_GUIDE.md) for detailed solutions. Common fixes include:
+- **Updating Docker** to version 20.x or newer (this resolves many issues)
+- **Using the rootless image** variants (e.g., `factoriotools/factorio:stable-rootless`)
+- **Setting correct ownership** for your specific Docker configuration
 
 ### My server is listed in the server browser, but nobody can connect
 
