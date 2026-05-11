@@ -13,7 +13,8 @@ PLATFORMS = [
     "linux/arm64",
     "linux/amd64",
 ]
-ACR = "factoribro.azurecr.io"
+GHCR = "ghcr.io"
+GH_IMAGE = f"{GHCR}/sn1572/factorio-docker"
 
 
 def create_builder(build_dir, builder_name, platform):
@@ -51,10 +52,9 @@ def build_singlearch(build_dir, build_args, image_type="regular"):
 
 
 def push_singlearch(tags):
-    global ACR
     for tag in tags:
         try:
-            subprocess.run(["docker", "push", f"{ACR}/factorio:{tag}"],
+            subprocess.run(["docker", "push", f"{GH_IMAGE}:{tag}"],
                             check=True)
         except subprocess.CalledProcessError as e:
             print("Error:", e)
@@ -69,7 +69,7 @@ def build_and_push(sha256, version, tags, push, multiarch, dockerfile="Dockerfil
     shutil.copytree("docker", build_dir)
     build_args = ["-f", dockerfile, "--build-arg", f"VERSION={version}", "--build-arg", f"SHA256={sha256}", "."]
     for tag in tags:
-        build_args.extend(["-t", f"{ACR}/factorio:{tag}"])
+        build_args.extend(["-t", f"{GH_IMAGE}:{tag}"])
 
     image_type = "rootless" if "rootless" in dockerfile.lower() else "regular"
 
@@ -82,12 +82,11 @@ def build_and_push(sha256, version, tags, push, multiarch, dockerfile="Dockerfil
 
 
 def login():
-    global ACR
     try:
         username = os.environ["DOCKER_USERNAME"]
         password = os.environ["DOCKER_PASSWORD"]
-        subprocess.run(["docker", "login", ACR, "-u", username, "-p", password], check=True)
-        print(f"Login to {ACR} successful.")
+        subprocess.run(["docker", "login", GHCR, "-u", username, "-p", password], check=True)
+        print(f"Login to {GHCR} successful.")
     except KeyError:
         print("Username and password need to be given")
         exit(1)

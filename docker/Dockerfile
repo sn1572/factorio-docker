@@ -10,6 +10,7 @@ RUN make
 # build factorio image
 FROM debian:stable-slim
 LABEL maintainer="https://github.com/factoriotools/factorio-docker"
+LABEL org.opencontainers.image.source=https://github.com/sn1572/factorio-docker
 
 ARG USER=factorio
 ARG GROUP=factorio
